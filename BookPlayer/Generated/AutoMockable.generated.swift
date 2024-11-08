@@ -1,4 +1,4 @@
-// Generated using Sourcery 2.0.2 — https://github.com/krzysztofzablocki/Sourcery
+// Generated using Sourcery 2.2.5 — https://github.com/krzysztofzablocki/Sourcery
 // DO NOT EDIT
 
 import Foundation
@@ -12,6 +12,62 @@ import AppKit
 import Combine
 import BookPlayerKit
 @testable import BookPlayer
+class JellyfinAccountServiceProtocolMock: JellyfinAccountServiceProtocol {
+    //MARK: - findSavedConnection
+
+    var findSavedConnectionThrowableError: Error?
+    var findSavedConnectionCallsCount = 0
+    var findSavedConnectionCalled: Bool {
+        return findSavedConnectionCallsCount > 0
+    }
+    var findSavedConnectionReturnValue: JellyfinConnectionData?
+    var findSavedConnectionClosure: (() throws -> JellyfinConnectionData?)?
+    func findSavedConnection() throws -> JellyfinConnectionData? {
+        if let error = findSavedConnectionThrowableError {
+            throw error
+        }
+        findSavedConnectionCallsCount += 1
+        if let findSavedConnectionClosure = findSavedConnectionClosure {
+            return try findSavedConnectionClosure()
+        } else {
+            return findSavedConnectionReturnValue
+        }
+    }
+    //MARK: - saveConnection
+
+    var saveConnectionThrowableError: Error?
+    var saveConnectionCallsCount = 0
+    var saveConnectionCalled: Bool {
+        return saveConnectionCallsCount > 0
+    }
+    var saveConnectionReceivedData: JellyfinConnectionData?
+    var saveConnectionReceivedInvocations: [JellyfinConnectionData] = []
+    var saveConnectionClosure: ((JellyfinConnectionData) throws -> Void)?
+    func saveConnection(_ data: JellyfinConnectionData) throws {
+        if let error = saveConnectionThrowableError {
+            throw error
+        }
+        saveConnectionCallsCount += 1
+        saveConnectionReceivedData = data
+        saveConnectionReceivedInvocations.append(data)
+        try saveConnectionClosure?(data)
+    }
+    //MARK: - removeSavedConnection
+
+    var removeSavedConnectionThrowableError: Error?
+    var removeSavedConnectionCallsCount = 0
+    var removeSavedConnectionCalled: Bool {
+        return removeSavedConnectionCallsCount > 0
+    }
+    var removeSavedConnectionClosure: (() throws -> Void)?
+    func removeSavedConnection() throws {
+        if let error = removeSavedConnectionThrowableError {
+            throw error
+        }
+        removeSavedConnectionCallsCount += 1
+        try removeSavedConnectionClosure?()
+    }
+}
 class KeychainServiceProtocolMock: KeychainServiceProtocol {
     //MARK: - setAccessToken
 

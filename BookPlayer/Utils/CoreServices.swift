@@ -17,6 +17,7 @@ struct CoreServices {
   let playbackService: PlaybackServiceProtocol
   let playerManager: PlayerManagerProtocol
   let singleFileDownloadService: SingleFileDownloadService
+  let jellyfinAccountService: JellyfinAccountServiceProtocol
   let playerLoaderService: PlayerLoaderService
   let watchService: PhoneWatchConnectivityService
 }

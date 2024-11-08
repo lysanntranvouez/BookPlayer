@@ -138,6 +138,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, BPLogger {
       let singleFileDownloadService = SingleFileDownloadService(
         networkClient: NetworkClient()
       )
+      let jellyfinAccountService = JellyfinAccountService()
       let coreServices = CoreServices(
         dataManager: dataManager,
         accountService: accountService,
@@ -146,6 +147,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, BPLogger {
         playbackService: playbackService,
         playerManager: playerManager,
         singleFileDownloadService: singleFileDownloadService,
+        jellyfinAccountService: jellyfinAccountService,
         playerLoaderService: playerLoaderService,
         watchService: watchService
       )

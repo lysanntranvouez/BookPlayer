@@ -69,6 +69,7 @@ final class StorageViewModelMissingFileTests: XCTestCase {
     let playbackService = PlaybackServiceProtocolMock()
     let playerManager = PlayerManagerProtocolMock()
     let singleFileDownloadService = SingleFileDownloadService(networkClient: NetworkClient())
+    let jellyfinAccountService = JellyfinAccountServiceProtocolMock()
 
     /// Avoid making the second onboarding network call
     AppDelegate.shared?.coreServices = CoreServices(
@@ -79,6 +80,7 @@ final class StorageViewModelMissingFileTests: XCTestCase {
       playbackService: playbackService,
       playerManager: playerManager,
       singleFileDownloadService: singleFileDownloadService,
+      jellyfinAccountService: jellyfinAccountService,
       playerLoaderService: PlayerLoaderService(
         syncService: syncService,
         libraryService: libraryService,

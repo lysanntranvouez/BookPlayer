@@ -29,6 +29,7 @@ class LibraryListCoordinatorTests: XCTestCase {
     playerManagerMock.currentSpeedPublisherReturnValue = Just(1.0).eraseToAnyPublisher()
     playerManagerMock.isPlayingPublisherReturnValue = Just(false).eraseToAnyPublisher()
     let syncServiceMock = SyncServiceProtocolMock()
+    let jellyfinAccountService = JellyfinAccountServiceProtocolMock()
 
     self.libraryListCoordinator = LibraryListCoordinator(
       flow: .pushFlow(navigationController: self.presentingController),
@@ -42,6 +43,7 @@ class LibraryListCoordinatorTests: XCTestCase {
         playerManager: playerManagerMock,
         syncService: syncServiceMock
       ),
+      jellyfinAccountService: jellyfinAccountService,
       accountService: coreServices.accountService
     )
 
@@ -87,6 +89,7 @@ class FolderListCoordinatorTests: XCTestCase {
     playerManagerMock.currentItemPublisherReturnValue = Just(nil).eraseToAnyPublisher()
     let singleFileDownloadService = SingleFileDownloadService(networkClient: NetworkClient())
     let syncServiceMock = SyncServiceProtocolMock()
+    let jellyfinAccountService = JellyfinAccountServiceProtocolMock()
 
     self.folderListCoordinator = FolderListCoordinator(
       flow: .pushFlow(navigationController: self.presentingController),
@@ -100,7 +103,8 @@ class FolderListCoordinatorTests: XCTestCase {
       listRefreshService: ListSyncRefreshService(
         playerManager: playerManagerMock,
         syncService: syncServiceMock
-      )
+      ),
+      jellyfinAccountService: jellyfinAccountService
     )
 
     self.folderListCoordinator.start()

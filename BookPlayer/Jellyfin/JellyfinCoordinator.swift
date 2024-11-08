@@ -14,15 +14,17 @@ import UIKit
 class JellyfinCoordinator: Coordinator {
   let flow: BPCoordinatorPresentationFlow
   private let singleFileDownloadService: SingleFileDownloadService
+  private let jellyfinAccountService: JellyfinAccountServiceProtocol
   private var disposeBag = Set<AnyCancellable>()
 
   private var apiClient: JellyfinClient?
   private var userID: String?
   private var libraryName: String?
 
-  init(flow: BPCoordinatorPresentationFlow, singleFileDownloadService: SingleFileDownloadService) {
+  init(flow: BPCoordinatorPresentationFlow, singleFileDownloadService: SingleFileDownloadService, jellyfinAccountService: JellyfinAccountServiceProtocol) {
     self.flow = flow
     self.singleFileDownloadService = singleFileDownloadService
+    self.jellyfinAccountService = jellyfinAccountService
 
     bindObservers()
   }
@@ -44,12 +46,51 @@ class JellyfinCoordinator: Coordinator {
   }
 
   func start() {
+    if !isLoggedIn {
+      tryLoginWithSavedConnection()
+    }
     let vc = if isLoggedIn {
-      createJellyfinLibraryScreen(withLibraryName: libraryName ?? "", userID: userID ?? "", client: self.apiClient!)
+      createJellyfinLibraryScreen(withLibraryName: libraryName ?? "",
+                                  userID: userID ?? "",
+                                  client: self.apiClient!)
     } else {
       createJellyfinLoginScreen()
     }
     flow.startPresentation(vc, animated: true)
+  }
+
+  static func createClient(serverUrlString: String, accessToken: String? = nil) -> JellyfinClient? {
+    let mainBundleInfo = Bundle.main.infoDictionary
+    let clientName = mainBundleInfo?[kCFBundleNameKey as String] as? String
+    let clientVersion = mainBundleInfo?[kCFBundleVersionKey as String] as? String
+    let deviceID = UIDevice.current.identifierForVendor
+    guard let url = URL(string: serverUrlString), let clientName, let clientVersion, let deviceID else {
+      return nil
+    }
+
+    let configuration = JellyfinClient.Configuration(
+      url: url,
+      client: clientName,
+      deviceName: UIDevice.current.name,
+      deviceID: "\(deviceID.uuidString)-\(clientName)",
+      version: clientVersion
+    )
+    return JellyfinClient(configuration: configuration, accessToken: accessToken)
+  }
+
+  private func tryLoginWithSavedConnection() {
+    do {
+      guard let data = try jellyfinAccountService.findSavedConnection() else {
+        return
+      }
+      self.userID = data.userID
+
+      if let apiClient = JellyfinCoordinator.createClient(serverUrlString: data.url.absoluteString, accessToken: data.accessToken) {
+        self.apiClient = apiClient
+      }
+    } catch {
+      // ignore issues retrieving the connection, we'll just have to prompt again and save the new data
+    }
   }
 
   private func createJellyfinLoginScreen() -> UIViewController {
@@ -61,11 +102,25 @@ class JellyfinCoordinator: Coordinator {
       switch route {
       case .cancel:
         viewModel.dismiss()
-      case .loginFinished(let libraryName, let userID, let client):
+      case .loginFinished(let userID, let client):
+        if viewModel.form.rememberMe, let accessToken = client.accessToken {
+          let connectionData = JellyfinConnectionData(url: client.configuration.url,
+                                                      userID: userID,
+                                                      userName: viewModel.form.username,
+                                                      accessToken: accessToken)
+          do {
+            try self.jellyfinAccountService.saveConnection(connectionData)
+          } catch {
+            // ignore issue saving the connection data, we'll just have to prompt again next time
+          }
+        }
+
         self.apiClient = client
         self.userID = userID
-        self.libraryName = libraryName
-        let libraryVC = self.createJellyfinLibraryScreen(withLibraryName: libraryName, userID: userID, client: client)
+        self.libraryName = viewModel.form.serverName ?? ""
+        let libraryVC = self.createJellyfinLibraryScreen(withLibraryName: self.libraryName!,
+                                                         userID: userID,
+                                                         client: client)
         self.flow.pushViewController(libraryVC, animated: true)
       }
     }

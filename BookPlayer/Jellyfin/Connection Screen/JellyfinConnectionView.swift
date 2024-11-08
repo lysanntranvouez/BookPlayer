@@ -40,6 +40,7 @@ struct JellyfinConnectionView: View {
     var serverName: String
     var username: Binding<String>
     var password: Binding<String>
+    var rememberMe: Binding<Bool>
     @EnvironmentObject var themeViewModel: ThemeViewModel
 
     var body: some View {
@@ -68,6 +69,9 @@ struct JellyfinConnectionView: View {
           $0.textContentType = .password
           $0.autocapitalization = .none
         }
+        Toggle(isOn: rememberMe) {
+          Text("jellyfin_password_remember_me_label".localized)
+        }
       } header: {
         Text("jellyfin_section_login".localized)
       }
@@ -90,7 +94,8 @@ struct JellyfinConnectionView: View {
           serverUrl: viewModel.form.serverUrl,
           serverName: viewModel.form.serverName ?? "",
           username: $viewModel.form.username,
-          password: $viewModel.form.password
+          password: $viewModel.form.password,
+          rememberMe: $viewModel.form.rememberMe
         )
       case .connected:
         ConnectedView()
@@ -100,7 +105,31 @@ struct JellyfinConnectionView: View {
   }
 }
 
-#Preview {
-  var viewModel = JellyfinConnectionViewModel()
+#Preview("disconnected") {
+  let viewModel = JellyfinConnectionViewModel()
+  JellyfinConnectionView(viewModel: viewModel)
+}
+
+#Preview("found server") {
+  let viewModel = {
+    var viewModel = JellyfinConnectionViewModel()
+    viewModel.connectionState = .foundServer
+    viewModel.form.serverName = "Mock Server"
+    viewModel.form.serverUrl = "http://example.com"
+    return viewModel
+  }()
+  JellyfinConnectionView(viewModel: viewModel)
+}
+
+#Preview("connected") {
+  let viewModel = {
+    var viewModel = JellyfinConnectionViewModel()
+    viewModel.connectionState = .connected
+    viewModel.form.serverName = "Mock Server"
+    viewModel.form.serverUrl = "http://example.com"
+    viewModel.form.username = "Mock User"
+    viewModel.form.password = "secret"
+    return viewModel
+  }()
   JellyfinConnectionView(viewModel: viewModel)
 }

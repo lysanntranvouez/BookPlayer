@@ -21,6 +21,7 @@ class MainCoordinator: NSObject {
   let playbackService: PlaybackServiceProtocol
   let accountService: AccountServiceProtocol
   var syncService: SyncServiceProtocol
+  let jellyfinAccountService: JellyfinAccountServiceProtocol
   let watchConnectivityService: PhoneWatchConnectivityService
 
   let navigationController: UINavigationController
@@ -38,6 +39,7 @@ class MainCoordinator: NSObject {
     self.playbackService = coreServices.playbackService
     self.playerManager = coreServices.playerManager
     self.singleFileDownloadService = coreServices.singleFileDownloadService
+    self.jellyfinAccountService = coreServices.jellyfinAccountService
     self.watchConnectivityService = coreServices.watchService
 
     ThemeManager.shared.libraryService = libraryService
@@ -95,6 +97,7 @@ class MainCoordinator: NSObject {
         playerManager: playerManager,
         syncService: syncService
       ),
+      jellyfinAccountService: jellyfinAccountService,
       accountService: self.accountService
     )
     playerManager.syncProgressDelegate = libraryCoordinator
