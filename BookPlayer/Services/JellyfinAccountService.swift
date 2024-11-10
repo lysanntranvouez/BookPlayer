@@ -9,7 +9,8 @@
 import Foundation
 
 struct JellyfinConnectionData {
-  let url: URL
+  let serverUrl: URL
+  let serverName: String
   let userID: String
   let userName: String
   let accessToken: String
@@ -39,14 +40,18 @@ class JellyfinAccountService : JellyfinAccountServiceProtocol {
     guard let existingItem = item as? [String : Any],
           let accessTokenData = existingItem[kSecValueData as String] as? Data,
           let accessToken = String(data: accessTokenData, encoding: String.Encoding.utf8),
-          let urlString = existingItem[kSecAttrServer as String] as? String,
-          let url = URL(string: urlString),
+          let serverUrlString = existingItem[kSecAttrServer as String] as? String,
+          let serverUrl = URL(string: serverUrlString),
           let userID = existingItem[kSecAttrAccount as String] as? String
     else {
       return nil
     }
-    let userName = existingItem[kSecAttrComment as String] as? String ?? ""
-    return JellyfinConnectionData(url: url, userID: userID, userName: userName, accessToken: accessToken)
+    let additionalData = decodeAdditionalData(existingItem[kSecAttrComment as String] as? String ?? "")
+    return JellyfinConnectionData(serverUrl: serverUrl,
+                                  serverName: additionalData.serverName,
+                                  userID: userID,
+                                  userName: additionalData.userName,
+                                  accessToken: accessToken)
   }
 
   func saveConnection(_ data: JellyfinConnectionData) throws {
@@ -56,9 +61,9 @@ class JellyfinAccountService : JellyfinAccountServiceProtocol {
     }
 
     let query = buildQuery()
-    let attributes: [String: Any] = [kSecAttrServer as String: data.url.absoluteString,
+    let attributes: [String: Any] = [kSecAttrServer as String: data.serverUrl.absoluteString,
                                      kSecAttrAccount as String: data.userID,
-                                     kSecAttrComment as String: data.userName,
+                                     kSecAttrComment as String: encodeAdditionalData(data),
                                      kSecValueData as String: secureData]
     var status = SecItemUpdate(buildQuery() as CFDictionary, attributes as CFDictionary)
     if status != errSecSuccess {
@@ -81,5 +86,33 @@ class JellyfinAccountService : JellyfinAccountServiceProtocol {
   private func buildQuery() -> [String: Any] {
     return [kSecClass as String: kSecClassInternetPassword,
             kSecAttrLabel as String: Self.serviceName ]
+  }
+
+  private struct AdditionalData : Codable {
+    let serverName: String
+    let userName: String
+  }
+  private func encodeAdditionalData(_ data: JellyfinConnectionData) -> String {
+    encodeAdditionalData(AdditionalData(serverName: data.serverName,
+                                        userName: data.userName))
+  }
+  private func encodeAdditionalData(_ data: AdditionalData) -> String {
+    do {
+      let jsonEncoder = JSONEncoder()
+      let jsonResultData = try jsonEncoder.encode(data)
+      return String(data: jsonResultData, encoding: .utf8)!
+    } catch {
+      return ""
+    }
+  }
+  private func decodeAdditionalData(_ data: String) -> AdditionalData {
+    do {
+      let jsonDecoder = JSONDecoder()
+      let jsonData = data.data(using: .utf8)!
+      let jsonResultData = try jsonDecoder.decode(AdditionalData.self, from: jsonData)
+      return jsonResultData
+    } catch {
+      return AdditionalData(serverName: "", userName: "")
+    }
   }
 }
