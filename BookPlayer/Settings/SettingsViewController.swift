@@ -36,7 +36,7 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
   var viewModel: SettingsViewModel!
 
   enum SettingsSection: Int {
-    case plus = 0, appearance, playback, storage, data, siri, backups, privacy, support, credits
+    case plus = 0, appearance, playback, storage, data, siri, backups, jellyfin, privacy, support, credits
   }
 
   let creditsIndexPath = IndexPath(row: 0, section: SettingsSection.credits.rawValue)
@@ -49,6 +49,7 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
   let cloudDeletedIndexPath = IndexPath(row: 1, section: SettingsSection.storage.rawValue)
   let lastPlayedShortcutPath = IndexPath(row: 0, section: SettingsSection.siri.rawValue)
   let sleepTimerShortcutPath = IndexPath(row: 1, section: SettingsSection.siri.rawValue)
+  let jellyfinManageConnectionPath = IndexPath(row: 0, section: SettingsSection.jellyfin.rawValue)
   let tipJarPath = IndexPath(row: 0, section: SettingsSection.support.rawValue)
   let supportEmailPath = IndexPath(row: 1, section: SettingsSection.support.rawValue)
   let debugFilesPath = IndexPath(row: 2, section: SettingsSection.support.rawValue)
@@ -230,14 +231,17 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
     case SettingsSection.plus.rawValue:
       return CGFloat.leastNormalMagnitude
     case SettingsSection.data.rawValue:
-      if viewModel.hasMadeDonation() {
-        return super.tableView(tableView, heightForHeaderInSection: section)
-      } else {
+      if !viewModel.hasMadeDonation() {
+        return CGFloat.leastNormalMagnitude
+      }
+    case SettingsSection.jellyfin.rawValue:
+      if !viewModel.hasJellyfinConnection() {
         return CGFloat.leastNormalMagnitude
       }
     default:
-      return super.tableView(tableView, heightForHeaderInSection: section)
+      break
     }
+    return super.tableView(tableView, heightForHeaderInSection: section)
   }
 
   override func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
@@ -245,14 +249,17 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
     case SettingsSection.plus.rawValue:
       return CGFloat.leastNormalMagnitude
     case SettingsSection.data.rawValue:
-      if viewModel.hasMadeDonation() {
-        return super.tableView(tableView, heightForFooterInSection: section)
-      } else {
+      if !viewModel.hasMadeDonation() {
+        return CGFloat.leastNormalMagnitude
+      }
+    case SettingsSection.jellyfin.rawValue:
+      if !viewModel.hasJellyfinConnection() {
         return CGFloat.leastNormalMagnitude
       }
     default:
-      return super.tableView(tableView, heightForFooterInSection: section)
+      break
     }
+    return super.tableView(tableView, heightForFooterInSection: section)
   }
 
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -293,6 +300,8 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
       self.viewModel.showStorageManagement()
     case self.cloudDeletedIndexPath:
       self.viewModel.showCloudDeletedFiles()
+    case self.jellyfinManageConnectionPath:
+      self.viewModel.showJellyfinConnectionManagement()
     default: break
     }
   }
@@ -319,6 +328,12 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
       return "settings_siri_title".localized
     case .backups:
       return "settings_backup_title".localized
+    case .jellyfin:
+      if viewModel.hasJellyfinConnection() {
+        return "settings_jellyfin_title".localized
+      } else {
+        return nil
+      }
     case .privacy:
       return "settings_privacy_title".localized
     case .support:
@@ -360,18 +375,21 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
 
   override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
     let totalCount = super.tableView(tableView, numberOfRowsInSection: section)
-
-    guard 
-      let settingsSection = SettingsSection(rawValue: section),
-      settingsSection == .siri
-    else {
+    guard let settingsSection = SettingsSection(rawValue: section) else {
       return totalCount
     }
 
-    if #available(iOS 16.4, *) {
-      return totalCount - 1
-    } else {
-      return totalCount
+    return switch settingsSection {
+    case .siri:
+      if #available(iOS 16.4, *) {
+        totalCount - 1
+      } else {
+        totalCount
+      }
+    case .jellyfin:
+      viewModel.hasJellyfinConnection() ? totalCount : 0
+    default:
+      totalCount
     }
   }
 
@@ -469,6 +487,10 @@ class SettingsViewController: UITableViewController, MVVMControllerProtocol, MFM
     safari.dismissButtonStyle = .close
 
     self.present(safari, animated: true)
+  }
+
+  func signOutFromJellyfin() {
+    // TODO
   }
 }
 

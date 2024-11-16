@@ -22,6 +22,7 @@ class SettingsViewModel: ViewModelProtocol {
     case storageManagement
     case deletedFilesManagement
     case tipJar
+    case jellyfinConnectionManagement
     case credits
     case shareDebugInformation(info: String)
   }
@@ -35,6 +36,7 @@ class SettingsViewModel: ViewModelProtocol {
   let accountService: AccountServiceProtocol
   let libraryService: LibraryServiceProtocol
   let syncService: SyncServiceProtocol
+  let jellyfinAccountService: JellyfinAccountServiceProtocol
 
   var onTransition: BPTransition<Routes>?
 
@@ -46,11 +48,13 @@ class SettingsViewModel: ViewModelProtocol {
   init(
     accountService: AccountServiceProtocol,
     libraryService: LibraryServiceProtocol,
-    syncService: SyncServiceProtocol
+    syncService: SyncServiceProtocol,
+    jellyfinAccountService: JellyfinAccountServiceProtocol
   ) {
     self.accountService = accountService
     self.libraryService = libraryService
     self.syncService = syncService
+    self.jellyfinAccountService = jellyfinAccountService
     self.reloadAccount()
     self.bindObservers()
   }
@@ -77,6 +81,14 @@ class SettingsViewModel: ViewModelProtocol {
 
   func hasMadeDonation() -> Bool {
     return accountService.hasSyncEnabled()
+  }
+
+  func hasJellyfinConnection() -> Bool {
+    do {
+      return try jellyfinAccountService.findSavedConnection() != nil
+    } catch {
+      return false
+    }
   }
 
   /// Handle registering the value in `UserDefaults`
@@ -151,6 +163,10 @@ class SettingsViewModel: ViewModelProtocol {
 
   func showAutolock() {
     onTransition?(.autolock)
+  }
+
+  func showJellyfinConnectionManagement() {
+    onTransition?(.jellyfinConnectionManagement)
   }
 
   func showCredits() {
